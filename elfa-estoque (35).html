@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ffffff">
+<title>Elfa · Estoque</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────────────── */
+:root{
+  --elfa:#d0103a;        /* vermelho Elfa */
+  --elfa2:#a00c2c;       /* escuro */
+  --elfa-dim:rgba(208,16,58,.10);
+
+  --bg:#f4f6f9;
+  --sur:#ffffff;
+  --sur2:#f0f3f7;
+  --bor:#e2e8f0;
+  --bor2:#cbd5e1;
+
+  --grn:#16a34a;--grn-dim:rgba(22,163,74,.10);--grn-light:#dcfce7;
+  --org:#d97706;--org-dim:rgba(217,119,6,.10);--org-light:#fef3c7;
+  --red:#dc2626;--red-dim:rgba(220,38,38,.10);--red-light:#fee2e2;
+  --blu:#2563eb;--blu-dim:rgba(37,99,235,.10);--blu-light:#dbeafe;
+
+  --txt:#1e293b;--tx2:#64748b;--tx3:#94a3b8;--tx4:#cbd5e1;
+
+  --r:14px;--rs:10px;--rxs:6px;
+  --font:'Nunito',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.1),0 12px 40px rgba(0,0,0,.08);
+}
+
+/* ── RESET ──────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+.app{display:flex;min-height:100vh;}
+.sidebar{
+  width:250px;background:var(--sur);border-right:1px solid var(--bor);
+  display:flex;flex-direction:column;position:fixed;height:100vh;z-index:200;
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  box-shadow:var(--shadow);
+}
+.main{margin-left:250px;flex:1;min-height:100vh;}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);box-shadow:none;}
+  .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg);}
+  .main{margin-left:0;padding-bottom:76px;}
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.logo-area{
+  padding:20px 18px 16px;border-bottom:1px solid var(--bor);
+  background:linear-gradient(135deg,#fff 60%,#fff8f9);
+}
+.logo-img{height:48px;object-fit:contain;display:block;}
+.logo-sub{font-size:10px;color:var(--tx3);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-top:6px;}
+
+.nav{padding:10px 10px;flex:1;overflow-y:auto;scrollbar-width:none;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-sec{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:14px 10px 6px;font-weight:800;}
+
+.ni{
+  display:flex;align-items:center;gap:10px;padding:11px 13px;
+  border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:700;
+  color:var(--tx2);transition:all .16s;margin-bottom:3px;position:relative;
+}
+.ni:hover{background:var(--sur2);color:var(--txt);}
+.ni.active{background:var(--elfa-dim);color:var(--elfa);font-weight:800;}
+.ni.active::before{
+  content:'';position:absolute;left:0;top:20%;height:60%;
+  width:3px;background:var(--elfa);border-radius:0 3px 3px 0;
+}
+.ni svg{width:17px;height:17px;flex-shrink:0;}
+
+.api-box{padding:14px;border-top:1px solid var(--bor);background:var(--sur2);}
+.api-box label{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:5px;font-weight:800;}
+.api-box input{
+  width:100%;background:var(--sur);border:1px solid var(--bor);
+  border-radius:var(--rs);padding:8px 10px;font-size:10px;
+  color:var(--txt);font-family:var(--mono);outline:none;transition:border-color .18s;
+}
+.api-box input:focus{border-color:var(--elfa);}
+.btn-conn{
+  width:100%;margin-top:7px;padding:10px;background:var(--elfa);color:#fff;
+  border:none;border-radius:var(--rs);font-size:12px;font-weight:800;
+  cursor:pointer;font-family:var(--font);transition:background .18s;letter-spacing:.02em;
+}
+.btn-conn:hover{background:var(--elfa2);}
+.conn-st{font-size:10px;text-align:center;margin-top:6px;min-height:16px;font-weight:700;}
+.sb-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:199;backdrop-filter:blur(2px);}
+.sb-ov.open{display:block;}
+
+/* ── TOPBAR ──────────────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;gap:10px;padding:13px 20px;
+  border-bottom:1px solid var(--bor);background:var(--sur);
+  position:sticky;top:0;z-index:50;flex-wrap:wrap;
+  box-shadow:0 1px 0 var(--bor);
+}
+.mb-btn{display:none;background:none;border:none;cursor:pointer;color:var(--txt);padding:6px;border-radius:8px;}
+.mb-btn:active{background:var(--sur2);}
+@media(max-width:900px){.mb-btn{display:flex;align-items:center;}}
+.topbar h2{font-size:17px;font-weight:900;letter-spacing:-.03em;flex:1;color:var(--txt);}
+.topbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ── BUTTONS ─────────────────────────────────────────── */
+.btn{
+  padding:9px 16px;border-radius:var(--rs);border:none;cursor:pointer;
+  font-size:12px;font-weight:800;font-family:var(--font);transition:all .16s;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  letter-spacing:.02em;line-height:1;
+}
+.btn:active{transform:scale(.97);}
+.btn-pri{background:var(--elfa);color:#fff;}
+.btn-pri:hover{background:var(--elfa2);}
+.btn-out{background:transparent;color:var(--tx2);border:1.5px solid var(--bor2);}
+.btn-out:hover{background:var(--sur2);color:var(--txt);}
+.btn-grn{background:var(--grn-light);color:var(--grn);border:1.5px solid rgba(22,163,74,.2);}
+.btn-grn:hover{background:rgba(22,163,74,.2);}
+.btn-org{background:var(--org-light);color:var(--org);border:1.5px solid rgba(217,119,6,.2);}
+.btn-org:hover{background:rgba(217,119,6,.2);}
+.btn-red{background:var(--red);color:#fff;}
+.btn-red:hover{background:#b91c1c;}
+.btn-sm{padding:7px 13px;font-size:11px;}
+.btn-xs{padding:5px 10px;font-size:10px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ── PAGES ───────────────────────────────────────────── */
+.page{display:none;padding:20px;}
+.page.active{display:block;}
+
+/* ── CARDS ───────────────────────────────────────────── */
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+.card{
+  background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);
+  padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.card-icon{
+  position:absolute;top:12px;right:12px;width:32px;height:32px;
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+}
+.card-icon svg{width:16px;height:16px;}
+.card.ab .card-icon{background:var(--blu-light);color:var(--blu);}
+.card.ag .card-icon{background:var(--grn-light);color:var(--grn);}
+.card.ao .card-icon{background:var(--org-light);color:var(--org);}
+.card.ar .card-icon{background:var(--red-light);color:var(--red);}
+.card-lbl{font-size:10px;color:var(--tx2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:800;}
+.card-val{font-size:28px;font-weight:900;line-height:1;letter-spacing:-.04em;}
+.card-sub{font-size:10px;color:var(--tx3);margin-top:5px;font-weight:600;}
+.cv-b{color:var(--blu);}.cv-g{color:var(--grn);}.cv-o{color:var(--org);}.cv-r{color:var(--red);}
+
+/* ── SECTIONS ────────────────────────────────────────── */
+.sec{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow);}
+.sec-h{padding:14px 18px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--sur);}
+.sec-t{font-size:13px;font-weight:900;letter-spacing:-.01em;color:var(--txt);}
+.sec-b{padding:16px 18px;}
+
+/* ── TABLE ───────────────────────────────────────────── */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{
+  text-align:left;padding:9px 14px;font-size:10px;color:var(--tx2);
+  text-transform:uppercase;letter-spacing:.08em;border-bottom:2px solid var(--bor);
+  font-weight:800;white-space:nowrap;background:var(--sur2);
+}
+tbody tr{border-bottom:1px solid var(--bor);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--sur2);}
+tbody td{padding:11px 14px;color:var(--tx2);font-size:12px;vertical-align:middle;}
+tbody td:first-child{color:var(--txt);font-weight:700;}
+
+/* ── BADGES ──────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.04em;gap:4px;}
+.bg{background:var(--grn-light);color:var(--grn);}
+.bo{background:var(--org-light);color:var(--org);}
+.br{background:var(--red-light);color:var(--red);}
+.bb{background:var(--blu-light);color:var(--blu);}
+.be{background:var(--elfa-dim);color:var(--elfa);}
+
+/* ── SEARCH ──────────────────────────────────────────── */
+.sb{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.sb input,.sb select{
+  flex:1;min-width:160px;background:var(--sur);border:1.5px solid var(--bor);
+  border-radius:var(--rs);padding:11px 14px;font-size:14px;color:var(--txt);
+  font-family:var(--font);outline:none;transition:border-color .18s;font-weight:600;
+}
+.sb input:focus,.sb select:focus{border-color:var(--elfa);box-shadow:0 0 0 3px var(--elfa-dim);}
+
+/* ── FORM ────────────────────────────────────────────── */
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:11px;color:var(--tx2);font-weight:800;letter-spacing:.04em;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{
+  background:var(--sur);border:1.5px solid var(--bor);border-radius:var(--rs);
+  padding:11px 13px;font-size:14px;color:var(--txt);font-family:var(--font);
+  outline:none;transition:all .18s;width:100%;font-weight:600;
+}
+.fg input:focus,.fg select:focus,.fg textarea:focus{
+  border-color:var(--elfa);box-shadow:0 0 0 3px var(--elfa-dim);
+}
+.fg input[readonly]{opacity:.55;cursor:default;background:var(--sur2);}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
+.fa{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+
+/* ── PILLS ───────────────────────────────────────────── */
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.pill{
+  padding:8px 18px;border-radius:20px;border:1.5px solid var(--bor2);
+  font-size:12px;font-weight:800;cursor:pointer;transition:all .16s;
+  background:var(--sur2);color:var(--tx2);
+}
+.pill:hover{border-color:var(--elfa);color:var(--elfa);}
+.pill.active{background:var(--elfa-dim);border-color:var(--elfa);color:var(--elfa);}
+
+/* ── PRODUTO CARD ─────────────────────────────────────── */
+.pc{
+  background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--rs);
+  padding:13px 16px;cursor:pointer;transition:all .16s;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;
+}
+.pc:hover,.pc.sel{border-color:var(--elfa);background:var(--elfa-dim);}
+.pc-cod{font-size:10px;color:var(--elfa);font-family:var(--mono);margin-bottom:3px;font-weight:600;}
+.pc-nome{font-size:13px;font-weight:800;color:var(--txt);line-height:1.3;}
+.pc-info{font-size:11px;color:var(--tx3);margin-top:2px;font-weight:600;}
+.pc-qtd{margin-left:auto;font-size:26px;font-weight:900;color:var(--elfa);white-space:nowrap;text-align:right;letter-spacing:-.04em;}
+.pc-un{font-size:10px;color:var(--tx3);text-align:right;font-weight:700;}
+
+/* ── LOTE CARDS ──────────────────────────────────────── */
+.lg{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;}
+.lc{
+  background:var(--sur);border:2px solid var(--bor);border-radius:var(--rs);
+  padding:14px;cursor:pointer;transition:all .16s;text-align:center;
+  box-shadow:var(--shadow);
+}
+.lc:hover,.lc.sel{border-color:var(--elfa);box-shadow:0 0 0 3px var(--elfa-dim);}
+.lc.vend{border-color:var(--org);background:var(--org-light);}
+.lc.venc{border-color:var(--red);background:var(--red-light);}
+.lc-num{font-size:10px;font-weight:800;color:var(--txt);margin-bottom:2px;font-family:var(--mono);}
+.lc-val{font-size:10px;color:var(--tx3);margin-bottom:8px;font-weight:600;}
+.lc-qtd{font-size:28px;font-weight:900;letter-spacing:-.04em;}
+.lc-un{font-size:10px;color:var(--tx3);font-weight:700;}
+.lc-aviso{font-size:10px;margin-top:5px;font-weight:800;}
+
+/* ── STEP BOX ────────────────────────────────────────── */
+.stb{
+  background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);
+  padding:18px;margin-bottom:14px;box-shadow:var(--shadow);transition:opacity .2s;
+}
+.st-t{font-size:13px;font-weight:900;color:var(--tx2);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.stn{
+  width:28px;height:28px;border-radius:50%;background:var(--elfa);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;flex-shrink:0;
+}
+
+/* ── VENCIMENTO ITEMS ────────────────────────────────── */
+.vi{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bor);}
+.vi:last-child{border-bottom:none;}
+.vi-bar{width:4px;border-radius:4px;flex-shrink:0;align-self:stretch;min-height:38px;}
+.vi-info{flex:1;min-width:0;}
+.vi-nome{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vi-det{font-size:11px;color:var(--tx3);margin-top:3px;font-weight:600;}
+.vi-d{text-align:right;flex-shrink:0;}
+.vi-num{font-size:20px;font-weight:900;letter-spacing:-.03em;}
+.vi-lbl{font-size:9px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.08em;}
+
+/* ── BAR CHART ───────────────────────────────────────── */
+.cr{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.cr-lbl{font-size:11px;color:var(--txt);width:140px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;}
+.cr-bg{flex:1;height:8px;background:var(--sur2);border-radius:4px;overflow:hidden;}
+.cr-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--elfa2),var(--elfa));transition:width .7s cubic-bezier(.4,0,.2,1);}
+.cr-val{font-size:11px;color:var(--tx2);width:40px;text-align:right;font-family:var(--mono);font-weight:600;}.qtd-input{width:80px;background:var(--sur2);border:1.5px solid var(--bor);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--txt);outline:none;font-family:var(--font);font-weight:700;}
+
+/* ── MODAL ───────────────────────────────────────────── */
+.ov{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);}
+.ov.open{display:flex;}
+.modal{background:var(--sur);border:1px solid var(--bor);border-radius:18px;width:100%;max-width:680px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.mh{padding:18px 22px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sur);z-index:1;border-radius:18px 18px 0 0;}
+.mh-t{font-size:16px;font-weight:900;letter-spacing:-.02em;}
+.mc{background:var(--sur2);border:1.5px solid var(--bor);color:var(--tx2);cursor:pointer;font-size:16px;line-height:1;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all .18s;font-weight:700;}
+.mc:hover{background:var(--red-light);color:var(--red);border-color:rgba(220,38,38,.3);}
+.mb{padding:20px 22px;}
+.mf{padding:14px 22px;border-top:1px solid var(--bor);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:var(--sur);border-radius:0 0 18px 18px;}
+
+/* ── NF UPLOAD ───────────────────────────────────────── */
+.uz{
+  border:2px dashed var(--bor2);border-radius:var(--r);padding:30px 20px;
+  text-align:center;cursor:pointer;transition:all .2s;
+}
+.uz:hover,.uz:active{border-color:var(--elfa);background:var(--elfa-dim);}
+.uz-icon{width:48px;height:48px;margin:0 auto 12px;background:var(--elfa-dim);border-radius:12px;display:flex;align-items:center;justify-content:center;}
+.uz-icon svg{width:24px;height:24px;color:var(--elfa);}
+.uz p{color:var(--tx2);font-size:14px;font-weight:800;margin-bottom:4px;}
+.uz small{color:var(--tx3);font-size:11px;font-weight:600;}
+.prev{width:100%;border-radius:var(--rs);margin:10px 0;max-height:200px;object-fit:contain;background:var(--sur2);border:1px solid var(--bor);}
+.air{background:var(--sur2);border-radius:var(--rs);padding:12px;font-size:10px;font-family:var(--mono);color:var(--tx3);max-height:100px;overflow-y:auto;margin-top:8px;border:1px solid var(--bor);}
+.ld{display:flex;align-items:center;justify-content:center;gap:10px;padding:28px;color:var(--tx3);font-size:13px;font-weight:700;}
+.sp{width:22px;height:22px;border:2.5px solid var(--bor2);border-top-color:var(--elfa);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── NF ROWS ─────────────────────────────────────────── */
+.nf-header{display:grid;grid-template-columns:2.5fr 1fr 1.2fr 0.7fr 0.8fr 36px;gap:6px;padding:0 2px;margin-bottom:6px;}
+.nf-header span{font-size:9px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.08em;}
+.nfr{display:grid;grid-template-columns:2.5fr 1fr 1.2fr 0.7fr 0.8fr 36px;gap:6px;align-items:center;margin-bottom:7px;}
+.nfr input{background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--rxs);padding:9px 10px;font-size:12px;color:var(--txt);font-family:var(--font);outline:none;width:100%;transition:border-color .18s;font-weight:600;}
+.nfr input:focus{border-color:var(--elfa);}
+.nf-rm{background:var(--sur2);border:1.5px solid var(--bor);color:var(--tx3);cursor:pointer;width:36px;height:38px;border-radius:var(--rxs);display:flex;align-items:center;justify-content:center;transition:all .18s;font-size:14px;flex-shrink:0;}
+.nf-rm:hover{background:var(--red-light);color:var(--red);border-color:rgba(220,38,38,.3);}
+@media(max-width:600px){
+  .nf-header,.nfr{grid-template-columns:1fr 1fr;}
+  .nfr input:first-child{grid-column:1/-1;}
+}
+
+/* ── REVISAO NF ──────────────────────────────────────── */
+.ri{background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--rs);padding:14px;margin-bottom:10px;}
+.ri-ai{font-size:12px;font-weight:800;color:var(--elfa);margin-bottom:4px;}
+.ri-det{font-size:11px;color:var(--tx3);margin-bottom:10px;font-weight:600;}
+.ri select{width:100%;background:var(--sur);border:1.5px solid var(--bor);border-radius:var(--rxs);padding:10px 12px;font-size:12px;color:var(--txt);outline:none;margin-bottom:8px;font-family:var(--font);transition:border-color .18s;font-weight:600;}
+.ri select:focus{border-color:var(--elfa);}
+.ri-m{font-size:11px;padding:7px 11px;border-radius:var(--rxs);margin-bottom:8px;font-weight:800;}
+.ri-m.ok{background:var(--grn-light);color:var(--grn);}
+.ri-m.new{background:var(--org-light);color:var(--org);}
+.ri-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;}
+
+/* ── CONFIRMAÇÃO BAIXA ───────────────────────────────── */
+.conf-wrap{text-align:center;padding:8px 0 16px;}
+.conf-icon{width:60px;height:60px;border-radius:50%;background:var(--red-light);border:2px solid rgba(220,38,38,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.conf-icon svg{width:28px;height:28px;color:var(--red);}
+.conf-title{font-size:18px;font-weight:900;margin-bottom:6px;color:var(--txt);}
+.conf-desc{font-size:13px;color:var(--tx2);line-height:1.6;font-weight:600;}
+.conf-box{background:var(--sur2);border:1px solid var(--bor);border-radius:var(--rs);padding:14px 16px;margin-top:16px;text-align:left;}
+.conf-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bor);font-size:13px;}
+.conf-row:last-child{border-bottom:none;}
+.conf-row span:first-child{color:var(--tx3);font-weight:700;}
+.conf-row span:last-child{font-weight:900;color:var(--txt);}
+
+/* ── API KEY AVISO ───────────────────────────────────── */
+.apikey-notice{background:var(--org-light);border:1.5px solid rgba(217,119,6,.25);border-radius:var(--rs);padding:13px 16px;font-size:13px;color:var(--org);margin-bottom:16px;font-weight:700;line-height:1.5;display:flex;gap:10px;align-items:flex-start;}
+
+/* ── EMPTY STATE ─────────────────────────────────────── */
+.empty{text-align:center;padding:40px 20px;color:var(--tx3);}
+.empty-icon{width:48px;height:48px;border-radius:12px;background:var(--sur2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;}
+.empty-icon svg{width:22px;height:22px;color:var(--tx4);}
+.empty p{font-size:14px;font-weight:800;color:var(--tx3);}
+.empty small{font-size:12px;color:var(--tx4);margin-top:4px;display:block;font-weight:600;}
+
+/* ── TOAST ───────────────────────────────────────────── */
+#tc{position:fixed;bottom:84px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:320px;}
+@media(min-width:901px){#tc{bottom:24px;}}
+.toast{
+  background:var(--sur);border:1px solid var(--bor);border-radius:12px;
+  padding:13px 16px;font-size:13px;min-width:220px;
+  animation:tIn .25s cubic-bezier(.4,0,.2,1);
+  display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);
+  font-weight:700;pointer-events:all;
+}
+.toast.success{border-left:4px solid var(--grn);}
+.toast.error{border-left:4px solid var(--red);}
+.toast.info{border-left:4px solid var(--blu);}
+.ti{width:20px;height:20px;flex-shrink:0;}
+@keyframes tIn{from{transform:translateX(60px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* ── BOTTOM NAV ──────────────────────────────────────── */
+.bn{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:var(--sur);border-top:1.5px solid var(--bor);z-index:150;
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  box-shadow:0 -4px 20px rgba(0,0,0,.08);
+}
+.bni{display:flex;justify-content:space-around;}
+.bni-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;padding:5px 8px;color:var(--tx3);font-size:9px;
+  font-weight:800;transition:all .16s;text-transform:uppercase;
+  letter-spacing:.04em;min-width:56px;border-radius:10px;
+  -webkit-tap-highlight-color:transparent;
+}
+.bni-item:active{background:var(--sur2);}
+.bni-item.active{color:var(--elfa);}
+.bni-item svg{width:22px;height:22px;}
+@media(max-width:900px){.bn{display:block;}}
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media(max-width:600px){
+  .cg{grid-template-columns:1fr 1fr;}
+  .page{padding:12px;}
+  .topbar{padding:10px 14px;}
+  .sec-b{padding:12px 14px;}
+  .fgrid{grid-template-columns:1fr;}
+  .stb{padding:14px;}
+  .card-val{font-size:24px;}
+  .g2{grid-template-columns:1fr;}
+  .topbar h2{font-size:15px;}
+  .topbar-actions .btn span{display:none;}
+}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:768px){.g2{grid-template-columns:1fr;}}
+
+/* ── DIVIDER ─────────────────────────────────────────── */
+.divider{height:1px;background:var(--bor);margin:16px 0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+<aside class="sidebar" id="sb">
+  <div class="logo-area">
+    <img src="https://i.imgur.com/placeholder.png" id="logo-img" class="logo-img"
+      onerror="this.style.display='none';document.getElementById('logo-txt').style.display='flex'"
+      alt="Elfa Serviços e Logística">
+    <div id="logo-txt" style="display:none;align-items:center;gap:10px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--elfa);display:flex;align-items:center;justify-content:center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div><div style="font-size:16px;font-weight:900;color:var(--elfa)">elfa</div><div style="font-size:9px;color:var(--tx3);font-weight:700;letter-spacing:.08em">SERVIÇOS E LOGÍSTICA</div></div>
+    </div>
+    <div class="logo-sub">Controle de Estoque</div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-sec">Principal</div>
+    <div class="ni active" onclick="nav('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </div>
+    <div class="ni" onclick="nav('estoque')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Estoque
+    </div>
+    <div class="ni" onclick="nav('separar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Separar / Baixa
+    </div>
+    <div class="ni" onclick="nav('vencimentos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Vencimentos
+    </div>
+    <div class="nav-sec">Entradas</div>
+    <div class="ni" onclick="nav('nf')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Nota Fiscal (IA)
+    </div>
+    <div class="nav-sec">Controle</div>
+    <div class="ni" onclick="nav('historico')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Histórico / Estorno
+    </div>
+    <div class="ni" onclick="nav('zerados')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Itens Zerados
+    </div>
+  </nav>
+
+  <div class="api-box">
+    <label>URL do Apps Script</label>
+    <input type="text" id="api-url" placeholder="Cole a URL aqui...">
+    <button class="btn-conn" onclick="conectar()">Conectar</button>
+    <div class="conn-st" id="conn-st"></div>
+  </div>
+</aside>
+<div class="sb-ov" id="sb-ov" onclick="closeSb()"></div>
+
+<!-- ══ MAIN ═════════════════════════════════════════════ -->
+<main class="main">
+
+<!-- ── DASHBOARD ──────────────────────────────────────── -->
+<div class="page active" id="page-dashboard">
+  <div class="topbar">
+    <button class="mb-btn" onclick="toggleSb()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <h2>Dashboard</h2>
+    <div class="topbar-actions">
+      <button class="btn btn-out btn-sm" onclick="carregar()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        <span>Atualizar</span>
+      </button>
+      <button class="btn btn-grn btn-sm" onclick="exportCSV('todos')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Exportar</span>
+      </button>
+    </div>
+  </div>
+  <div class="cg">
+    <div class="card ab">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+      <div class="card-lbl">Produtos</div><div class="card-val cv-b" id="d-tot">—</div><div class="card-sub">itens cadastrados</div>
+    </div>
+    <div class="card ag">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="card-lbl">Qtd Total</div><div class="card-val cv-g" id="d-qtd">—</div><div class="card-sub">unidades em estoque</div>
+    </div>
+    <div class="card ao">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div class="card-lbl">Vencem em 60d</div><div class="card-val cv-o" id="d-v60">—</div><div class="card-sub">lotes em atenção</div>
+    </div>
+    <div class="card ar">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+      <div class="card-lbl">Fornecedores</div><div class="card-val cv-r" id="d-for">—</div><div class="card-sub">ativos</div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="sec">
+      <div class="sec-h"><span class="sec-t">Por Fornecedor</span></div>
+      <div class="sec-b" id="ch-forn"><div class="ld"><div class="sp"></div>Aguardando dados...</div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-h"><span class="sec-t">Próximos a Vencer</span></div>
+      <div class="sec-b" id="ch-venc"><div class="ld"><div class="sp"></div>Aguardando dados...</div></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-h"><span class="sec-t">Resumo do Estoque</span></div>
+    <div class="sec-b"><div class="tw">
+      <table>
+        <thead><tr><th>Código</th><th>Descrição</th><th>Fornecedor</th><th>Und.</th><th>Total</th><th>Lotes</th><th>Status</th></tr></thead>
+        <tbody id="d-tbody"><tr><td colspan="7"><div class="ld"><div class="sp"></div>Conecte a planilha</div></td></tr></tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+
+<!-- ── ESTOQUE ─────────────────────────────────────────── -->
+<div class="page" id="page-estoque">
+  <div class="topbar">
+    <button class="mb-btn" onclick="toggleSb()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <h2>Estoque</h2>
+    <button class="btn btn-grn btn-sm" onclick="exportCSV('todos')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Exportar CSV</span>
+    </button>
+  </div>
+  <div class="sb">
+    <input type="text" placeholder="🔍  Buscar por código ou descrição..." id="s-prod" oninput="renderEstoque()">
+    <select id="s-forn" onchange="renderEstoque()"><option value="">Todos os fornecedores</option></select>
+  </div>
+  <div class="sec"><div class="sec-b"><div class="tw">
+    <table>
+      <thead><tr><th>Código</th><th>Descrição</th><th>Fornecedor</th><th>Und.</th><th>Lote 1</th><th>Val. 1</th><th>Qtd 1</th><th>Lote 2</th><th>Val. 2</th><th>Qtd 2</th><th>Lote 3</th><th>Val. 3</th><th>Qtd 3</th><th>Total</th></tr></thead>
+      <tbody id="e-tbody"><tr><td colspan="14"><div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div><p>Conecte a planilha</p></div></td></tr></tbody>
+    </table>
+  </div></div></div>
+</div>
+
+<!-- ── SEPARAR ─────────────────────────────────────────── -->
+<div class="page" id="page-separar">
+
+  <!-- PANEL 1: Busca de produto -->
+  <div id="sep-panel-busca">
+    <div class="topbar">
+      <button class="mb-btn" onclick="toggleSb()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <h2>Separar / Baixa</h2>
+    </div>
+    <!-- Busca rápida sempre visível -->
+    <div style="padding:14px 20px 0">
+      <div style="position:relative">
+        <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--tx3)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="sep-s" placeholder="Buscar produto por código ou nome..." oninput="renderSepProd()"
+          style="width:100%;background:var(--sur);border:2px solid var(--bor);border-radius:var(--rs);padding:13px 14px 13px 42px;font-size:15px;color:var(--txt);outline:none;font-family:var(--font);font-weight:600;transition:all .18s;"
+          onfocus="this.style.borderColor='var(--elfa)';this.style.boxShadow='0 0 0 3px var(--elfa-dim)'"
+          onblur="this.style.borderColor='var(--bor)';this.style.boxShadow='none'">
+      </div>
+    </div>
+    <!-- Filtro por fornecedor -->
+    <div style="padding:10px 20px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0">Fornecedor:</span>
+      <div class="pills" id="sep-forn" style="margin:0;flex:1"></div>
+    </div>
+    <!-- Lista de produtos -->
+    <div style="padding:12px 20px 20px" id="sep-prods">
+      <div class="empty"><p>Conecte a planilha primeiro</p></div>
+    </div>
+  </div>
+
+  <!-- PANEL 2: Lotes + Baixa (slide-in) -->
+  <div id="sep-panel-lote" style="display:none">
+    <div class="topbar">
+      <button class="btn btn-out btn-sm" onclick="voltarBusca()" style="gap:6px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </button>
+      <h2 id="sep-panel-title" style="font-size:14px">—</h2>
+    </div>
+
+    <!-- Info do produto selecionado -->
+    <div style="padding:14px 20px 0">
+      <div style="background:var(--elfa-dim);border:1.5px solid rgba(208,16,58,.2);border-radius:var(--rs);padding:13px 16px;display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:10px;color:var(--elfa);font-family:var(--mono);font-weight:700" id="lp-cod"></div>
+          <div style="font-size:14px;font-weight:900;color:var(--txt);margin-top:2px;line-height:1.3" id="lp-nome"></div>
+          <div style="font-size:11px;color:var(--tx3);margin-top:2px;font-weight:600" id="lp-forn"></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:28px;font-weight:900;color:var(--elfa);line-height:1;letter-spacing:-.04em" id="lp-total"></div>
+          <div style="font-size:10px;color:var(--tx3);font-weight:700" id="lp-und"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lotes -->
+    <div style="padding:14px 20px 0">
+      <div style="font-size:11px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Selecione o Lote</div>
+      <div class="lg" id="sep-lotes"></div>
+    </div>
+
+    <!-- Form de baixa (aparece ao clicar no lote) -->
+    <div id="sep-form-baixa" style="display:none;padding:14px 20px 20px">
+      <div style="font-size:11px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Registrar Baixa</div>
+      <div style="background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)">
+        <!-- Info do lote selecionado -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bor)">
+          <div>
+            <div style="font-size:10px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Lote</div>
+            <div style="font-size:14px;font-weight:900;color:var(--txt);font-family:var(--mono)" id="b-lote-show">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Validade</div>
+            <div style="font-size:14px;font-weight:900;color:var(--txt)" id="b-val-show">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Disponível</div>
+            <div style="font-size:22px;font-weight:900;color:var(--grn)" id="b-disp-show">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Unidade</div>
+            <div style="font-size:14px;font-weight:900;color:var(--txt)" id="b-und-show">—</div>
+          </div>
+        </div>
+        <!-- Quantidade -->
+        <div class="fg" style="margin-bottom:12px">
+          <label>Quantidade a Baixar</label>
+          <input type="number" id="b-qtd" min="1" placeholder="Digite a quantidade..." inputmode="numeric"
+            style="font-size:20px;font-weight:900;text-align:center;letter-spacing:-.02em">
+        </div>
+        <!-- Motivo -->
+        <div class="fg" style="margin-bottom:16px">
+          <label>Motivo (opcional)</label>
+          <input type="text" id="b-mot" placeholder="Ex: Saída para setor X">
+        </div>
+        <!-- Botões -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <button class="btn btn-out" onclick="cancelarLote()" style="justify-content:center;padding:14px">
+            Cancelar
+          </button>
+          <button class="btn btn-red" id="btn-baixa" onclick="pedirConfirmacaoBaixa()" style="justify-content:center;padding:14px;font-size:14px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- campos hidden para compatibilidade -->
+    <input type="hidden" id="b-cod">
+    <input type="hidden" id="b-prod">
+    <input type="hidden" id="b-lote">
+    <input type="hidden" id="b-val">
+    <input type="hidden" id="b-disp">
+  </div>
+</div>
+
+<!-- ── VENCIMENTOS ─────────────────────────────────────── -->
+<div class="page" id="page-vencimentos">
+  <div class="topbar">
+    <button class="mb-btn" onclick="toggleSb()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <h2>Vencimentos</h2>
+    <button class="btn btn-org btn-sm" onclick="exportVenc()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Exportar</span>
+    </button>
+  </div>
+  <div class="cg">
+    <div class="card ar">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+      <div class="card-lbl">Vencidos</div><div class="card-val cv-r" id="v-venc">—</div><div class="card-sub">já expirados</div>
+    </div>
+    <div class="card ao">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      <div class="card-lbl">Próx. 30 dias</div><div class="card-val cv-o" id="v-30">—</div><div class="card-sub">críticos</div>
+    </div>
+    <div class="card ab">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+      <div class="card-lbl">Próx. 60 dias</div><div class="card-val cv-b" id="v-60">—</div><div class="card-sub">em atenção</div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-h">
+      <span class="sec-t">Lista de Vencimentos</span>
+      <select id="v-fil" onchange="renderVenc()"
+        style="background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--rs);padding:8px 14px;font-size:12px;color:var(--txt);outline:none;font-family:var(--font);cursor:pointer;font-weight:700;">
+        <option value="60">60 dias</option>
+        <option value="30">30 dias</option>
+        <option value="-1">Vencidos</option>
+        <option value="999">Todos</option>
+      </select>
+    </div>
+    <div class="sec-b" id="v-lista">
+      <div class="empty"><p>Conecte a planilha</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── NOTA FISCAL ─────────────────────────────────────── -->
+<div class="page" id="page-nf">
+  <div class="topbar">
+    <button class="mb-btn" onclick="toggleSb()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <h2>Nota Fiscal (IA)</h2>
+  </div>
+
+  <!-- Aviso IA via Apps Script -->
+  <div id="nf-status-box" style="display:none" class="apikey-notice">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="nf-status-msg"></span>
+  </div>
+
+  <div class="g2">
+    <!-- Foto -->
+    <div class="sec">
+      <div class="sec-h"><span class="sec-t">📷 Foto da NF</span></div>
+      <div class="sec-b">
+        <div class="uz" onclick="document.getElementById('fi').click()" id="uz-area">
+          <div class="uz-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <p>Toque para tirar foto ou enviar arquivo</p>
+          <small>JPG, PNG — a IA extrai os itens automaticamente</small>
+        </div>
+        <input type="file" id="fi" accept="image/*" onchange="lerNF(event)" style="display:none" capture="environment">
+        <img id="nf-img" class="prev" style="display:none">
+        <div id="nf-ld" style="display:none" class="ld"><div class="sp"></div>Lendo NF com IA...</div>
+        <div id="nf-air" class="air" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Itens -->
+    <div class="sec">
+      <div class="sec-h">
+        <span class="sec-t">Itens da Nota</span>
+        <button class="btn btn-out btn-xs" onclick="addNFRow({})">+ Item</button>
+      </div>
+      <div class="sec-b">
+        <div class="fg" style="margin-bottom:14px">
+          <label>Fornecedor</label>
+          <input type="text" id="nf-forn" placeholder="Nome do fornecedor">
+        </div>
+        <!-- cabeçalho oculto em mobile, campos são empilhados -->
+        <div id="nf-rows"></div>
+        <div class="fa">
+          <button class="btn btn-out btn-sm" onclick="limparNF()">Limpar</button>
+          <button class="btn btn-pri" onclick="abrirRevisao()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Revisar e Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ITENS ZERADOS ───────────────────────────────────── -->
+<div class="page" id="page-zerados">
+  <div class="topbar">
+    <button class="mb-btn" onclick="toggleSb()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <h2>Itens Zerados</h2>
+    <div class="topbar-actions">
+      <button class="btn btn-org btn-sm" onclick="exportZerados()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Exportar para Compra</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cards resumo -->
+  <div class="cg">
+    <div class="card ar">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+      <div class="card-lbl">Total Zerados</div>
+      <div class="card-val cv-r" id="z-total">—</div>
+      <div class="card-sub">sem estoque</div>
+    </div>
+    <div class="card ao">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+      <div class="card-lbl">Fornecedores</div>
+      <div class="card-val cv-o" id="z-forn">—</div>
+      <div class="card-sub">com itens zerados</div>
+    </div>
+    <div class="card ab">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+      <div class="card-lbl">% do Estoque</div>
+      <div class="card-val cv-b" id="z-pct">—</div>
+      <div class="card-sub">do total de itens</div>
+    </div>
+  </div>
+
+  <!-- Filtro por fornecedor -->
+  <div class="sec" style="margin-bottom:14px">
+    <div class="sec-b" style="padding:12px 16px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="z-busca" placeholder="🔍 Buscar por código ou descrição..." oninput="renderZerados()"
+          style="flex:1;min-width:180px;background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--txt);outline:none;font-family:var(--font);font-weight:600;transition:all .18s;"
+          onfocus="this.style.borderColor='var(--elfa)'" onblur="this.style.borderColor='var(--bor)'">
+        <select id="z-forn-fil" onchange="renderZerados()"
+          style="background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--txt);outline:none;font-family:var(--font);font-weight:700;cursor:pointer;">
+          <option value="">Todos os fornecedores</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista -->
+  <div class="sec">
+    <div class="sec-b"><div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Descrição</th>
+            <th>Fornecedor</th>
+            <th>Unid.</th>
+            <th>Qtd. Desejada</th>
+          </tr>
+        </thead>
+        <tbody id="z-tbody">
+          <tr><td colspan="5"><div class="empty"><p>Conecte a planilha primeiro</p></div></td></tr>
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+
+<!-- ── HISTÓRICO / ESTORNO ──────────────────────────────── -->
+<div class="page" id="page-historico">
+  <div class="topbar">
+    <button class="mb-btn" onclick="toggleSb()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <h2>Histórico / Estorno</h2>
+    <button class="btn btn-out btn-sm" onclick="carregarHistorico()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+      <span>Atualizar</span>
+    </button>
+  </div>
+
+  <!-- Cards resumo -->
+  <div class="cg">
+    <div class="card ab">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg></div>
+      <div class="card-lbl">Total Baixas</div>
+      <div class="card-val cv-b" id="h-total">—</div>
+      <div class="card-sub">registradas</div>
+    </div>
+    <div class="card ag">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="card-lbl">Hoje</div>
+      <div class="card-val cv-g" id="h-hoje">—</div>
+      <div class="card-sub">movimentações</div>
+    </div>
+    <div class="card ao">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
+      <div class="card-lbl">Entradas</div>
+      <div class="card-val cv-o" id="h-entradas">—</div>
+      <div class="card-sub">no período</div>
+    </div>
+  </div>
+
+  <!-- Filtro -->
+  <div class="sec" style="margin-bottom:14px">
+    <div class="sec-b" style="padding:12px 16px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="h-busca" placeholder="🔍 Buscar por produto, código ou lote..." oninput="filtrarHistorico()"
+          style="flex:1;min-width:180px;background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--txt);outline:none;font-family:var(--font);font-weight:600;transition:all .18s;"
+          onfocus="this.style.borderColor='var(--elfa)'" onblur="this.style.borderColor='var(--bor)'">
+        <select id="h-tipo" onchange="filtrarHistorico()"
+          style="background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--txt);outline:none;font-family:var(--font);font-weight:700;cursor:pointer;">
+          <option value="">Todos os tipos</option>
+          <option value="BAIXA">Baixas</option>
+          <option value="ENTRADA">Entradas</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista -->
+  <div id="h-lista">
+    <div class="empty">
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <p>Clique em Atualizar para carregar o histórico</p>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- /app -->
+
+<!-- ══ MODAL: REVISÃO NF ═════════════════════════════════ -->
+<div class="ov" id="ov-nf">
+  <div class="modal">
+    <div class="mh">
+      <span class="mh-t">Revisar Itens da Nota</span>
+      <button class="mc" onclick="fecharOv('ov-nf')">✕</button>
+    </div>
+    <div class="mb">
+      <p style="font-size:13px;color:var(--tx2);margin-bottom:16px;line-height:1.6;font-weight:600">Confira os itens extraídos pela IA. Vincule ao produto existente no estoque ou deixe vazio para criar novo.</p>
+      <div id="rev-lista"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-out" onclick="fecharOv('ov-nf')">Cancelar</button>
+      <button class="btn btn-pri" id="btn-conf-nf" onclick="confirmarNF()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Confirmar e Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: CONFIRMAÇÃO ESTORNO ══════════════════════ -->
+<div class="ov" id="ov-estorno">
+  <div class="modal" style="max-width:420px">
+    <div class="mh">
+      <span class="mh-t">Confirmar Estorno</span>
+      <button class="mc" onclick="fecharOv('ov-estorno')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="conf-wrap">
+        <div class="conf-icon" style="background:var(--org-light);border-color:rgba(217,119,6,.2)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--org)" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        </div>
+        <div class="conf-title">Confirmar estorno?</div>
+        <div class="conf-desc">A quantidade será devolvida ao estoque do produto e lote correspondente.</div>
+        <div class="conf-box">
+          <div class="conf-row"><span>Produto</span><span id="est-prod">—</span></div>
+          <div class="conf-row"><span>Lote</span><span id="est-lote">—</span></div>
+          <div class="conf-row"><span>Quantidade</span><span id="est-qtd" style="color:var(--grn)">—</span></div>
+          <div class="conf-row"><span>Data original</span><span id="est-data">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-out" onclick="fecharOv('ov-estorno')">Cancelar</button>
+      <button class="btn btn-org" id="btn-conf-estorno" onclick="confirmarEstorno()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        Confirmar Estorno
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: CONFIRMAÇÃO BAIXA ═════════════════════════ -->
+<div class="ov" id="ov-conf">
+  <div class="modal" style="max-width:420px">
+    <div class="mh">
+      <span class="mh-t">Confirmar Baixa</span>
+      <button class="mc" onclick="fecharOv('ov-conf')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="conf-wrap">
+        <div class="conf-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="conf-title">Confirmar esta baixa?</div>
+        <div class="conf-desc">Esta ação será gravada na planilha e no log de baixas. Não pode ser desfeita pelo app.</div>
+        <div class="conf-box">
+          <div class="conf-row"><span>Produto</span><span id="cf-prod">—</span></div>
+          <div class="conf-row"><span>Lote</span><span id="cf-lote">—</span></div>
+          <div class="conf-row"><span>Quantidade</span><span id="cf-qtd" style="color:var(--red)">—</span></div>
+          <div class="conf-row"><span>Motivo</span><span id="cf-mot">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-out" onclick="fecharOv('ov-conf')">Cancelar</button>
+      <button class="btn btn-red" id="btn-conf-baixa" onclick="confirmarBaixa()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Confirmar Baixa
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="tc"></div>
+
+<!-- ══ BOTTOM NAV ════════════════════════════════════════ -->
+<div class="bn">
+  <div class="bni">
+    <div class="bni-item active" id="bn-dashboard" onclick="nav('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+      Home
+    </div>
+    <div class="bni-item" id="bn-estoque" onclick="nav('estoque')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Estoque
+    </div>
+    <div class="bni-item" id="bn-separar" onclick="nav('separar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Separar
+    </div>
+    <div class="bni-item" id="bn-vencimentos" onclick="nav('vencimentos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Vencer
+    </div>
+    <div class="bni-item" id="bn-nf" onclick="nav('nf')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+      NF
+    </div>
+    <div class="bni-item" id="bn-historico" onclick="nav('historico')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Histórico
+    </div>
+    <div class="bni-item" id="bn-zerados" onclick="nav('zerados')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Zerados
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ CONFIG ═══════════════════════════════════════════════
+var API_URL='https://script.google.com/macros/s/AKfycbwSqmR8KNdka728E9xHOKYRqNVig1q0MnMofFEByd3lVxlK0tAB6lk2AIvaDV2dKWynog/exec';
+var dados=[],selForn=null,selProd=null,selLote=null,nfItems=[],nfCount=0;
+
+// ══ LOGO ELFA ═════════════════════════════════════════════
+// Logo inline via SVG baseado na marca Elfa
+(function(){
+  var img=document.getElementById('logo-img');
+  // SVG da logo Elfa — círculo com letra e + texto
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" height="48">'+
+    '<circle cx="32" cy="40" r="28" fill="none" stroke="#d0103a" stroke-width="4"/>'+
+    '<path d="M18 40 Q32 18 46 40" fill="none" stroke="#d0103a" stroke-width="4" stroke-linecap="round"/>'+
+    '<line x1="18" y1="40" x2="46" y2="40" stroke="#d0103a" stroke-width="4"/>'+
+    '<text x="68" y="36" font-family="Arial Black,Arial" font-weight="900" font-size="26" fill="#d0103a">elfa</text>'+
+    '<text x="70" y="52" font-family="Arial,sans-serif" font-weight="700" font-size="9" fill="#64748b" letter-spacing="1">SERVIÇOS E LOGÍSTICA</text>'+
+  '</svg>';
+  var blob=new Blob([svg],{type:'image/svg+xml'});
+  var url=URL.createObjectURL(blob);
+  img.src=url; img.style.display='block';
+  document.getElementById('logo-txt').style.display='none';
+})();
+
+// ══ INIT ═════════════════════════════════════════════════
+window.addEventListener('load',function(){
+  // Força sempre a URL do código (nunca vazia)
+  document.getElementById('api-url').value = API_URL;
+  localStorage.setItem('api_url', API_URL);
+  addNFRow({});
+  carregar();
+});
+
+// ══ API KEY — não necessário, IA roda no Apps Script ══════
+
+// ══ NAVEGAÇÃO ════════════════════════════════════════════
+function nav(p){
+  document.querySelectorAll('.page').forEach(function(e){e.classList.remove('active');});
+  document.querySelectorAll('.ni').forEach(function(e){e.classList.remove('active');});
+  document.querySelectorAll('.bni-item').forEach(function(e){e.classList.remove('active');});
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.ni').forEach(function(e){if(e.getAttribute('onclick')&&e.getAttribute('onclick').includes("'"+p+"'"))e.classList.add('active');});
+  var bn=document.getElementById('bn-'+p);if(bn)bn.classList.add('active');
+  if(p==='zerados') renderZerados();
+  closeSb();window.scrollTo(0,0);
+}
+function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('sb-ov').classList.toggle('open');}
+function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-ov').classList.remove('open');}
+function fecharOv(id){document.getElementById(id).classList.remove('open');}
+
+// ══ API ══════════════════════════════════════════════════
+function getUrl(){return document.getElementById('api-url').value.trim()||API_URL;}
+function setStatus(msg,cor){document.getElementById('conn-st').innerHTML='<span style="color:'+cor+';font-size:10px;font-weight:800">'+msg+'</span>';}
+
+async function apiGet(){
+  var r=await fetch(getUrl(),{mode:'cors'});return await r.json();
+}
+async function apiPost(p){
+  var r=await fetch(getUrl(),{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(p)});
+  return await r.json();
+}
+async function conectar(){setStatus('Conectando…','var(--org)');await carregar();}
+async function carregar(){
+  try{
+    // Salva a URL atual no localStorage
+    localStorage.setItem('api_url', getUrl());
+    setStatus('Carregando…','var(--org)');
+    var j=await apiGet();
+    if(!j||!j.data||!j.data.length){setStatus('Sem dados','var(--red)');toast('Nenhum dado encontrado.','error');return;}
+    dados=j.data;
+    localStorage.setItem('api_url',getUrl());
+    setStatus('✓ '+dados.length+' itens','var(--grn)');
+    toast(dados.length+' itens carregados!','success');
+    renderTudo();
+  }catch(e){setStatus('Erro de conexão','var(--red)');toast('Erro ao conectar. Verifique a URL.','error');console.error(e);}
+}
+
+// ══ HELPERS ══════════════════════════════════════════════
+function fmtData(s){
+  if(!s)return'';s=String(s).trim();
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s))return s;
+  var d=new Date(s);
+  if(!isNaN(d.getTime()))return('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
+  return s;
+}
+function diasVenc(s){
+  if(!s)return null;s=String(s).trim();var d;
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){var p=s.split('/');d=new Date(+p[2],+p[1]-1,+p[0]);}
+  else d=new Date(s);
+  if(isNaN(d.getTime()))return null;
+  return Math.ceil((d-new Date())/86400000);
+}
+function getLotes(r){
+  var l=[];
+  [{lk:'__lote1',vk:'__val1',qk:'__qtd1',idx:1},{lk:'__lote2',vk:'__val2',qk:'__qtd2',idx:2},{lk:'__lote3',vk:'__val3',qk:'__qtd3',idx:3},{lk:'__lote4',vk:'__val4',qk:'__qtd4',idx:4}]
+  .forEach(function(p){
+    var lote=String(r[p.lk]||'').trim(),val=fmtData(String(r[p.vk]||'').trim()),qtd=parseFloat(r[p.qk])||0;
+    if(lote||qtd>0)l.push({lote:lote,validade:val,qtd:qtd,idx:p.idx});
+  });
+  return l;
+}
+function totalQtd(r){return parseFloat(r.__total)||((parseFloat(r.__qtd1)||0)+(parseFloat(r.__qtd2)||0)+(parseFloat(r.__qtd3)||0)+(parseFloat(r.__qtd4)||0));}
+function fornLista(){var s={};dados.forEach(function(r){if(r.__forn)s[r.__forn]=1;});return Object.keys(s).sort();}
+function renderTudo(){renderDash();renderEstoque();renderSepForn();renderVenc();}
+
+// ══ DASHBOARD ════════════════════════════════════════════
+function renderDash(){
+  if(!dados.length)return;
+  var forns=fornLista(),qtdTot=0,v60=0;
+  dados.forEach(function(r){
+    qtdTot+=totalQtd(r);
+    getLotes(r).forEach(function(l){var d=diasVenc(l.validade);if(d!==null&&d>=0&&d<=60)v60++;});
+  });
+  document.getElementById('d-tot').textContent=dados.length;
+  document.getElementById('d-qtd').textContent=qtdTot.toLocaleString('pt-BR');
+  document.getElementById('d-v60').textContent=v60;
+  document.getElementById('d-for').textContent=forns.length;
+
+  var fm={};dados.forEach(function(r){var f=r.__forn||'Sem fornecedor';fm[f]=(fm[f]||0)+totalQtd(r);});
+  var sorted=Object.entries(fm).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var mx=sorted.length?sorted[0][1]:1;
+  document.getElementById('ch-forn').innerHTML=sorted.length?sorted.map(function(e){
+    var pct=mx>0?(e[1]/mx*100).toFixed(1):0;
+    return'<div class="cr"><div class="cr-lbl" title="'+e[0]+'">'+e[0]+'</div><div class="cr-bg"><div class="cr-fill" style="width:'+pct+'%"></div></div><div class="cr-val">'+e[1]+'</div></div>';
+  }).join(''):'<div class="empty"><p>Sem dados</p></div>';
+
+  var vi=[];
+  dados.forEach(function(r){getLotes(r).forEach(function(l){var d=diasVenc(l.validade);if(d!==null&&d<=60)vi.push({nome:r.__desc,forn:r.__forn,lote:l.lote,val:l.validade,dias:d,qtd:l.qtd});});});
+  vi.sort(function(a,b){return a.dias-b.dias;});
+  document.getElementById('ch-venc').innerHTML=vi.length?vi.slice(0,8).map(function(v){
+    var cor=v.dias<0?'var(--red)':v.dias<30?'var(--org)':'var(--org)';
+    var txt=v.dias<0?'Vencido':v.dias+'d';
+    return'<div class="vi"><div class="vi-bar" style="background:'+cor+'"></div><div class="vi-info"><div class="vi-nome">'+v.nome+'</div><div class="vi-det">Lote: '+(v.lote||'S/N')+' · '+v.qtd+' un · '+v.val+'</div></div><div class="vi-d"><div class="vi-num" style="color:'+cor+'">'+txt+'</div><div class="vi-lbl">p/ vencer</div></div></div>';
+  }).join(''):'<div class="empty"><p>Nenhum vencimento próximo ✓</p></div>';
+
+  document.getElementById('d-tbody').innerHTML=dados.map(function(r){
+    var lotes=getLotes(r),tot=totalQtd(r);
+    var venc=lotes.some(function(l){var d=diasVenc(l.validade);return d!==null&&d<0;});
+    var atenc=!venc&&lotes.some(function(l){var d=diasVenc(l.validade);return d!==null&&d<=60;});
+    var st=tot===0?'<span class="badge br">Zerado</span>':venc?'<span class="badge br">Vencido</span>':atenc?'<span class="badge bo">Atenção</span>':'<span class="badge bg">OK</span>';
+    return'<tr><td style="font-family:var(--mono);font-size:11px">'+r.__cod+'</td><td>'+r.__desc+'</td><td><span class="badge be">'+r.__forn+'</span></td><td>'+r.__und+'</td><td style="font-weight:900;color:var(--elfa)">'+tot+'</td><td>'+lotes.length+'</td><td>'+st+'</td></tr>';
+  }).join('');
+}
+
+// ══ ESTOQUE ══════════════════════════════════════════════
+function renderEstoque(){
+  if(!dados.length)return;
+  var srch=(document.getElementById('s-prod').value||'').toLowerCase();
+  var forn=document.getElementById('s-forn').value;
+  var sel=document.getElementById('s-forn');
+  if(sel.options.length===1)fornLista().forEach(function(f){var o=document.createElement('option');o.value=f;o.textContent=f;sel.appendChild(o);});
+  var list=dados.filter(function(r){return(!srch||r.__desc.toLowerCase().includes(srch)||r.__cod.toLowerCase().includes(srch))&&(!forn||r.__forn===forn);});
+  function cv(v){var d=diasVenc(v);if(!v)return'—';return d!==null&&d<0?'<span style="color:var(--red);font-weight:800">'+v+'</span>':d!==null&&d<=60?'<span style="color:var(--org);font-weight:700">'+v+'</span>':v;}
+  document.getElementById('e-tbody').innerHTML=list.length?list.map(function(r){
+    var l=getLotes(r),tot=totalQtd(r);
+    return'<tr>'+
+      '<td style="font-family:var(--mono);font-size:11px;white-space:nowrap">'+r.__cod+'</td>'+
+      '<td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+r.__desc+'">'+r.__desc+'</td>'+
+      '<td><span class="badge be">'+r.__forn+'</span></td>'+
+      '<td>'+r.__und+'</td>'+
+      '<td>'+(l[0]?l[0].lote||'S/N':'—')+'</td><td>'+(l[0]?cv(l[0].validade):'—')+'</td><td style="font-weight:800">'+(l[0]?l[0].qtd:'—')+'</td>'+
+      '<td>'+(l[1]?l[1].lote||'S/N':'—')+'</td><td>'+(l[1]?cv(l[1].validade):'—')+'</td><td style="font-weight:800">'+(l[1]?l[1].qtd:'—')+'</td>'+
+      '<td>'+(l[2]?l[2].lote||'S/N':'—')+'</td><td>'+(l[2]?cv(l[2].validade):'—')+'</td><td style="font-weight:800">'+(l[2]?l[2].qtd:'—')+'</td>'+
+      '<td style="font-weight:900;color:var(--elfa)">'+tot+'</td>'+
+    '</tr>';
+  }).join(''):'<tr><td colspan="14"><div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><p>Nenhum produto encontrado</p><small>Tente outro termo</small></div></td></tr>';
+}
+
+// ══ SEPARAR — fluxo em painéis ═══════════════════════════
+
+function renderSepForn(){
+  if(!dados.length)return;
+  var fornAll=[{v:'',t:'Todos'}].concat(fornLista().map(function(f){return{v:f,t:f};}));
+  document.getElementById('sep-forn').innerHTML=fornAll.map(function(f){
+    return'<div class="pill'+(selForn===f.v?' active':'')+'" onclick="filtrarForn(\''+f.v.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+(f.t)+'</div>';
+  }).join('');
+  renderSepProd();
+}
+
+function filtrarForn(f){
+  selForn=f;
+  renderSepForn();
+}
+
+function renderSepProd(){
+  var s=(document.getElementById('sep-s')?document.getElementById('sep-s').value||'':'').toLowerCase();
+  var list=dados.filter(function(r){
+    var matchForn=!selForn||r.__forn===selForn;
+    var matchS=!s||r.__desc.toLowerCase().includes(s)||r.__cod.toLowerCase().includes(s);
+    return matchForn&&matchS;
+  });
+  var el=document.getElementById('sep-prods');
+  if(!el)return;
+  if(!dados.length){el.innerHTML='<div class="empty"><p>Conecte a planilha primeiro</p></div>';return;}
+  el.innerHTML=list.length?list.map(function(r){
+    var idx=dados.indexOf(r),tot=totalQtd(r);
+    var vend=getLotes(r).some(function(l){var d=diasVenc(l.validade);return d!==null&&d<0;});
+    var stTag=vend?'<span class="badge br" style="font-size:9px">Vencido</span>':tot===0?'<span class="badge bo" style="font-size:9px">Zerado</span>':'';
+    return'<div class="pc" onclick="irParaLotes('+idx+')">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div class="pc-cod">'+r.__cod+'</div>'+
+        '<div class="pc-nome">'+r.__desc+'</div>'+
+        '<div class="pc-info" style="display:flex;gap:6px;align-items:center;margin-top:4px">'+
+          '<span class="badge be" style="font-size:9px">'+r.__forn+'</span>'+stTag+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+        '<div style="text-align:right"><div class="pc-qtd">'+tot+'</div><div class="pc-un">'+r.__und+'</div></div>'+
+        '<svg style="color:var(--tx4);flex-shrink:0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>'+
+      '</div>'+
+    '</div>';
+  }).join(''):'<div class="empty"><p>Nenhum produto encontrado</p><small>Tente outro termo de busca</small></div>';
+}
+
+function irParaLotes(idx){
+  selProd=dados[idx];selLote=null;
+  // mostra painel de lotes
+  document.getElementById('sep-panel-busca').style.display='none';
+  document.getElementById('sep-panel-lote').style.display='block';
+  document.getElementById('sep-form-baixa').style.display='none';
+  // preenche info do produto
+  document.getElementById('sep-panel-title').textContent=selProd.__desc;
+  document.getElementById('lp-cod').textContent=selProd.__cod;
+  document.getElementById('lp-nome').textContent=selProd.__desc;
+  document.getElementById('lp-forn').textContent=selProd.__forn;
+  document.getElementById('lp-total').textContent=totalQtd(selProd);
+  document.getElementById('lp-und').textContent=selProd.__und;
+  renderLotes();
+  window.scrollTo(0,0);
+}
+
+function voltarBusca(){
+  selProd=null;selLote=null;
+  document.getElementById('sep-panel-lote').style.display='none';
+  document.getElementById('sep-panel-busca').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function renderLotes(){
+  var lotes=getLotes(selProd);
+  document.getElementById('sep-lotes').innerHTML=lotes.length?lotes.map(function(l){
+    var d=diasVenc(l.validade);
+    var cls=d===null?'':d<0?'venc':d<=60?'vend':'';
+    var cor=d===null?'var(--elfa)':d<0?'var(--red)':d<=60?'var(--org)':'var(--grn)';
+    var av=d===null?'':d<0?'⛔ VENCIDO':'⚠ '+d+'d p/ vencer';
+    var isSel=selLote&&selLote.idx===l.idx;
+    return'<div class="lc '+cls+(isSel?' sel':'')+'" onclick="escolherLote(this)" data-lote=\''+JSON.stringify(l).replace(/'/g,'&apos;')+'\'>'+
+      '<div class="lc-num">Lote: '+(l.lote||'S/N')+'</div>'+
+      '<div class="lc-val">Val: '+(l.validade||'—')+'</div>'+
+      '<div class="lc-qtd" style="color:'+cor+'">'+l.qtd+'</div>'+
+      '<div class="lc-un">'+(selProd.__und||'un')+'</div>'+
+      (av?'<div class="lc-aviso" style="color:'+cor+'">'+av+'</div>':'')+
+    '</div>';
+  }).join(''):'<div class="empty"><p>Nenhum lote disponível</p></div>';
+}
+
+function escolherLote(el){
+  selLote=JSON.parse(el.getAttribute('data-lote').replace(/&apos;/g,"'"));
+  renderLotes();
+  // atualiza campos hidden
+  document.getElementById('b-cod').value=selProd.__cod||'';
+  document.getElementById('b-prod').value=selProd.__desc||'';
+  document.getElementById('b-lote').value=selLote.lote||'S/N';
+  document.getElementById('b-val').value=selLote.validade||'—';
+  document.getElementById('b-disp').value=selLote.qtd+' '+(selProd.__und||'');
+  // atualiza campos visuais no form
+  var d=diasVenc(selLote.validade);
+  var corVal=d!==null&&d<0?'var(--red)':d!==null&&d<=60?'var(--org)':'var(--txt)';
+  document.getElementById('b-lote-show').textContent=selLote.lote||'S/N';
+  document.getElementById('b-val-show').textContent=selLote.validade||'—';
+  document.getElementById('b-val-show').style.color=corVal;
+  document.getElementById('b-disp-show').textContent=selLote.qtd;
+  document.getElementById('b-und-show').textContent=selProd.__und||'un';
+  // limpa qtd e motivo
+  document.getElementById('b-qtd').value='';
+  document.getElementById('b-mot').value='';
+  // mostra form e rola até ele
+  document.getElementById('sep-form-baixa').style.display='block';
+  setTimeout(function(){
+    document.getElementById('sep-form-baixa').scrollIntoView({behavior:'smooth',block:'start'});
+    document.getElementById('b-qtd').focus();
+  },80);
+}
+
+function cancelarLote(){
+  selLote=null;
+  renderLotes();
+  document.getElementById('sep-form-baixa').style.display='none';
+  window.scrollTo(0,0);
+}
+
+function resetSep(){
+  selForn=null;selProd=null;selLote=null;
+  var el=document.getElementById('sep-s');if(el)el.value='';
+  document.getElementById('sep-panel-lote').style.display='none';
+  document.getElementById('sep-panel-busca').style.display='block';
+  document.getElementById('sep-form-baixa').style.display='none';
+  renderSepForn();
+  window.scrollTo(0,0);
+}
+
+// ══ BAIXA ════════════════════════════════════════════════
+function pedirConfirmacaoBaixa(){
+  var qtd=parseFloat(document.getElementById('b-qtd').value);
+  if(!qtd||qtd<=0){toast('Informe a quantidade!','error');return;}
+  if(qtd>selLote.qtd){toast('Quantidade maior que o disponível ('+selLote.qtd+')!','error');return;}
+  document.getElementById('cf-prod').textContent=selProd.__desc;
+  document.getElementById('cf-lote').textContent=selLote.lote||'S/N';
+  document.getElementById('cf-qtd').textContent=qtd+' '+(selProd.__und||'un');
+  document.getElementById('cf-mot').textContent=document.getElementById('b-mot').value.trim()||'Não informado';
+  document.getElementById('ov-conf').classList.add('open');
+}
+async function confirmarBaixa(){
+  var qtd=parseFloat(document.getElementById('b-qtd').value);
+  var btn=document.getElementById('btn-conf-baixa');
+  btn.disabled=true;btn.textContent='Salvando…';
+  try{
+    var res=await apiPost({action:'baixa',codigo:selProd.__cod,descricao:selProd.__desc,loteIdx:selLote.idx,quantidade:qtd,motivo:document.getElementById('b-mot').value});
+    if(res.status==='ok'){
+      selProd['__qtd'+(selLote.idx)]=res.novaQtd;
+      selLote.qtd=res.novaQtd;
+      fecharOv('ov-conf');
+      toast('Baixa de '+qtd+' unid. realizada!','success');
+      voltarBusca();renderTudo();
+    }else toast('Erro: '+(res.message||''),'error');
+  }catch(e){toast('Erro de conexão.','error');}
+  btn.disabled=false;
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Confirmar Baixa';
+}
+
+// ══ VENCIMENTOS ══════════════════════════════════════════
+function renderVenc(){
+  if(!dados.length)return;
+  var fil=parseInt(document.getElementById('v-fil').value);
+  var vencidos=0,d30=0,d60=0,items=[];
+  dados.forEach(function(r){
+    getLotes(r).forEach(function(l){
+      var d=diasVenc(l.validade);if(d===null)return;
+      if(d<0)vencidos++;if(d>=0&&d<=30)d30++;if(d>=0&&d<=60)d60++;
+      var show=fil===-1?d<0:fil===999?true:d>=0&&d<=fil;
+      if(show)items.push({nome:r.__desc,forn:r.__forn,cod:r.__cod,lote:l.lote,val:l.validade,dias:d,qtd:l.qtd,und:r.__und});
+    });
+  });
+  document.getElementById('v-venc').textContent=vencidos;
+  document.getElementById('v-30').textContent=d30;
+  document.getElementById('v-60').textContent=d60;
+  items.sort(function(a,b){return a.dias-b.dias;});
+  document.getElementById('v-lista').innerHTML=items.length?items.map(function(v){
+    var cor=v.dias<0?'var(--red)':v.dias<30?'var(--org)':'var(--org)';
+    var txt=v.dias<0?'Vencido':v.dias+'d';
+    return'<div class="vi"><div class="vi-bar" style="background:'+cor+'"></div>'+
+      '<div class="vi-info"><div class="vi-nome">'+v.nome+'</div>'+
+      '<div class="vi-det">'+v.forn+' · Lote: '+(v.lote||'S/N')+' · Val: '+v.val+' · '+v.qtd+' '+v.und+'</div></div>'+
+      '<div class="vi-d"><div class="vi-num" style="color:'+cor+'">'+txt+'</div><div class="vi-lbl">p/ vencer</div></div></div>';
+  }).join(''):'<div class="empty"><p>Nenhum item neste filtro ✓</p></div>';
+}
+
+// ══ EXPORT ═══════════════════════════════════════════════
+function exportCSV(tipo){
+  if(!dados.length){toast('Carregue os dados primeiro!','error');return;}
+  var rows=[['Código','Descrição','Fornecedor','Unid','Lote1','Val1','Qtd1','Lote2','Val2','Qtd2','Lote3','Val3','Qtd3','Total'].join(';')];
+  var fonte=tipo==='criticos'?dados.filter(function(r){return getLotes(r).some(function(l){var d=diasVenc(l.validade);return d!==null&&d<=60;});}):dados;
+  if(!fonte.length){toast('Nenhum item crítico!','info');return;}
+  fonte.forEach(function(r){
+    var l=getLotes(r);
+    rows.push([r.__cod,r.__desc,r.__forn,r.__und,l[0]?l[0].lote:'',l[0]?l[0].validade:'',l[0]?l[0].qtd:0,l[1]?l[1].lote:'',l[1]?l[1].validade:'',l[1]?l[1].qtd:0,l[2]?l[2].lote:'',l[2]?l[2].validade:'',l[2]?l[2].qtd:0,totalQtd(r)].map(function(v){return'"'+String(v||'').replace(/"/g,'""')+'"';}).join(';'));
+  });
+  baixarCSV(rows.join('\n'),'estoque_'+(tipo==='criticos'?'criticos':'completo')+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.csv');
+  toast('Exportado: '+fonte.length+' itens','success');
+}
+function exportVenc(){
+  if(!dados.length){toast('Carregue os dados!','error');return;}
+  var fil=parseInt(document.getElementById('v-fil').value);
+  var rows=[['Código','Descrição','Fornecedor','Lote','Validade','Qtd','Dias','Status'].join(';')];
+  dados.forEach(function(r){getLotes(r).forEach(function(l){
+    var d=diasVenc(l.validade);if(d===null)return;
+    var show=fil===-1?d<0:fil===999?true:d>=0&&d<=fil;if(!show)return;
+    rows.push([r.__cod,r.__desc,r.__forn,l.lote,l.validade,l.qtd,d<0?'Vencido':d,d<0?'VENCIDO':d<=30?'CRÍTICO':'ATENÇÃO'].map(function(v){return'"'+String(v||'').replace(/"/g,'""')+'"';}).join(';'));
+  });});
+  if(rows.length===1){toast('Nenhum item!','info');return;}
+  baixarCSV(rows.join('\n'),'vencimentos_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.csv');
+  toast('Exportado!','success');
+}
+function baixarCSV(txt,nome){
+  var b=new Blob(['\uFEFF'+txt],{type:'text/csv;charset=utf-8;'});
+  var u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download=nome;a.click();URL.revokeObjectURL(u);
+}
+
+// ══ NOTA FISCAL ══════════════════════════════════════════
+function addNFRow(d){
+  nfCount++;var id=nfCount;
+  var div=document.createElement('div');div.className='nfr';div.id='nfr-'+id;
+  div.innerHTML='<input placeholder="Descrição" value="'+(d.desc||'')+'">'+
+    '<input placeholder="Lote" value="'+(d.lote||'')+'">'+
+    '<input placeholder="DD/MM/AAAA" value="'+(d.val||'')+'">'+
+    '<input type="number" placeholder="Qtd" value="'+(d.qtd||'')+'" inputmode="numeric">'+
+    '<input placeholder="Unid" value="'+(d.unid||'')+'">'+
+    '<button class="nf-rm" onclick="document.getElementById(\'nfr-'+id+'\').remove()" title="Remover">✕</button>';
+  document.getElementById('nf-rows').appendChild(div);
+}
+function limparNF(){
+  document.getElementById('nf-rows').innerHTML='';nfCount=0;
+  document.getElementById('nf-forn').value='';
+  document.getElementById('nf-img').style.display='none';
+  document.getElementById('nf-air').style.display='none';
+  addNFRow({});
+}
+async function lerNF(e){
+  var file=e.target.files[0];if(!file)return;
+  // Verifica se está conectado
+  if(!dados.length){toast('Conecte a planilha antes de enviar a foto!','error');e.target.value='';return;}
+
+  var reader=new FileReader();
+  reader.onload=async function(ev){
+    var b64=ev.target.result.split(',')[1];
+    var mimeType=file.type||'image/jpeg';
+
+    document.getElementById('nf-img').src=ev.target.result;
+    document.getElementById('nf-img').style.display='block';
+    document.getElementById('nf-ld').style.display='flex';
+    document.getElementById('nf-air').style.display='none';
+    document.getElementById('nf-status-box').style.display='none';
+
+    try{
+      // Envia para o Apps Script processar com a IA (chave fica no servidor)
+      var res=await apiPost({
+        action:'lerNF',
+        imageBase64:b64,
+        mimeType:mimeType
+      });
+
+      document.getElementById('nf-ld').style.display='none';
+
+      if(res.status!=='ok'){
+        document.getElementById('nf-status-box').style.display='flex';
+        document.getElementById('nf-status-msg').textContent=res.message||'Erro ao processar imagem.';
+        toast(res.message||'Erro ao processar imagem.','error');
+        return;
+      }
+
+      // Preenche fornecedor e itens
+      if(res.fornecedor) document.getElementById('nf-forn').value=res.fornecedor;
+      document.getElementById('nf-rows').innerHTML='';nfCount=0;
+      (res.itens||[]).forEach(function(i){addNFRow(i);});
+
+      // Mostra resumo no log visual
+      document.getElementById('nf-air').style.display='block';
+      document.getElementById('nf-air').textContent='✓ '+( res.itens||[]).length+' itens extraídos. Fornecedor: '+(res.fornecedor||'não identificado');
+
+      toast((res.itens||[]).length+' itens lidos pela IA!','success');
+
+    }catch(err){
+      document.getElementById('nf-ld').style.display='none';
+      document.getElementById('nf-status-box').style.display='flex';
+      document.getElementById('nf-status-msg').textContent='Erro de conexão: '+err.message;
+      toast('Erro de conexão: '+err.message,'error');
+      console.error(err);
+    }
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+function casarProd(nome){
+  if(!nome||!dados.length)return null;
+  var n=nome.toLowerCase().trim();
+  var m=dados.find(function(r){return r.__desc.toLowerCase().trim()===n;});if(m)return m;
+  var palavras=n.split(/\s+/).filter(function(p){return p.length>=3;});
+  var melhor=null,score=0;
+  dados.forEach(function(r){var s=palavras.filter(function(p){return r.__desc.toLowerCase().includes(p);}).length;if(s>score){score=s;melhor=r;}});
+  return score>=Math.ceil(palavras.length*0.5)?melhor:null;
+}
+function abrirRevisao(){
+  var forn=document.getElementById('nf-forn').value.trim();
+  var rows=document.querySelectorAll('.nfr'),itens=[];
+  rows.forEach(function(row){
+    var inp=row.querySelectorAll('input');
+    // nova ordem: codigo, desc, lote, val, qtd, unid
+    var codigo=inp[0].value.trim(),desc=inp[1].value.trim(),lote=inp[2].value.trim(),val=inp[3].value.trim(),qtd=parseFloat(inp[4].value)||0,unid=inp[5].value.trim();
+    if(desc&&qtd)itens.push({codigo:codigo,desc:desc,lote:lote,val:val,qtd:qtd,unid:unid});
+  });
+  if(!itens.length){toast('Adicione pelo menos um item válido!','error');return;}
+  nfItems=itens;
+  document.getElementById('rev-lista').innerHTML=itens.map(function(item,idx){
+    var match=casarProd(item.desc);
+    var mInfo=match?'<div class="ri-m ok">✓ Encontrado: '+match.__desc+' ('+match.__cod+')</div>':'<div class="ri-m new">+ Novo produto — será criado na planilha</div>';
+    var opts=dados.map(function(r){return'<option value="'+r.__cod+'"'+(match&&match.__cod===r.__cod?' selected':'')+'>'+r.__cod+' — '+r.__desc+'</option>';}).join('');
+    return'<div class="ri">'+
+      '<div class="ri-ai">IA: "'+item.desc+'"</div>'+
+      '<div class="ri-det">Lote: '+(item.lote||'—')+' · Val: '+(item.val||'—')+' · Qtd: '+item.qtd+' '+item.unid+'</div>'+
+      '<select id="rv-sel-'+idx+'"><option value="">— Criar novo produto —</option>'+opts+'</select>'+
+      mInfo+
+      '<div class="ri-fields">'+
+        '<div class="fg"><label>Lote</label><input type="text" id="rv-lote-'+idx+'" value="'+(item.lote||'')+'"></div>'+
+        '<div class="fg"><label>Validade</label><input type="text" id="rv-val-'+idx+'" value="'+(item.val||'')+'"></div>'+
+        '<div class="fg"><label>Qtd</label><input type="number" id="rv-qtd-'+idx+'" value="'+(item.qtd||'')+'"></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  document.getElementById('ov-nf').classList.add('open');
+}
+async function confirmarNF(){
+  var forn=document.getElementById('nf-forn').value.trim();
+  var itens=nfItems.map(function(item,idx){
+    var cod=document.getElementById('rv-sel-'+idx).value;
+    var prod=cod?dados.find(function(r){return r.__cod===cod;}):null;
+    return{fornecedor:forn,codigo:cod||'',desc:prod?prod.__desc:item.desc,lote:document.getElementById('rv-lote-'+idx).value.trim(),val:document.getElementById('rv-val-'+idx).value.trim(),qtd:parseFloat(document.getElementById('rv-qtd-'+idx).value)||0,unid:prod?prod.__und:item.unid||''};
+  }).filter(function(i){return i.desc&&i.qtd>0;});
+  if(!itens.length){toast('Nenhum item válido!','error');return;}
+  var btn=document.getElementById('btn-conf-nf');
+  btn.disabled=true;btn.textContent='Salvando…';
+  try{
+    var res=await apiPost({action:'entrada',itens:itens});
+    if(res.status==='ok'){
+      fecharOv('ov-nf');
+      toast(itens.length+' itens salvos na planilha!','success');
+      limparNF();await carregar();
+    }else toast('Erro: '+(res.message||''),'error');
+  }catch(e){toast('Erro de conexão.','error');}
+  btn.disabled=false;btn.textContent='Confirmar e Salvar';
+}
+
+// ══ HISTÓRICO / ESTORNO ══════════════════════════════════
+var logData = [];
+var logFiltrado = [];
+var estornoAtual = null;
+
+async function carregarHistorico() {
+  document.getElementById('h-lista').innerHTML = '<div class="ld"><div class="sp"></div>Carregando histórico...</div>';
+  try {
+    var res = await apiPost({ action: 'lerLog' });
+    if (res.status !== 'ok') { toast('Erro ao carregar histórico: ' + (res.message||''), 'error'); return; }
+    logData = res.log || [];
+    // resumo
+    var hoje = new Date().toLocaleDateString('pt-BR');
+    var totalHoje = logData.filter(function(l){ return l.data && l.data.startsWith(hoje.split('/').reverse().join('-')||hoje); }).length;
+    var entradas = logData.filter(function(l){ return String(l.tipo||'').includes('ENTRADA'); }).length;
+    document.getElementById('h-total').textContent = logData.length;
+    document.getElementById('h-hoje').textContent = logData.filter(function(l){
+      var d = new Date(l.dataRaw);
+      var hj = new Date();
+      return d.getDate()===hj.getDate()&&d.getMonth()===hj.getMonth()&&d.getFullYear()===hj.getFullYear();
+    }).length;
+    document.getElementById('h-entradas').textContent = entradas;
+    filtrarHistorico();
+    toast('Histórico carregado!', 'success');
+  } catch(e) { toast('Erro de conexão.', 'error'); }
+}
+
+function filtrarHistorico() {
+  var busca = (document.getElementById('h-busca').value||'').toLowerCase();
+  var tipo  = document.getElementById('h-tipo').value;
+  logFiltrado = logData.filter(function(l) {
+    var matchBusca = !busca ||
+      String(l.descricao||'').toLowerCase().includes(busca) ||
+      String(l.codigo||'').toLowerCase().includes(busca) ||
+      String(l.lote||'').toLowerCase().includes(busca);
+    var matchTipo = !tipo || String(l.tipo||'').includes(tipo);
+    return matchBusca && matchTipo;
+  });
+  renderHistorico();
+}
+
+function renderHistorico() {
+  var el = document.getElementById('h-lista');
+  if (!logFiltrado.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><p>Nenhum registro encontrado</p></div>';
+    return;
+  }
+  el.innerHTML = logFiltrado.map(function(l, idx) {
+    var isBaixa = String(l.tipo||'').includes('BAIXA');
+    var isEntrada = String(l.tipo||'').includes('ENTRADA');
+    var cor = isBaixa ? 'var(--red)' : 'var(--grn)';
+    var bg  = isBaixa ? 'var(--red-light)' : 'var(--grn-light)';
+    var sinal = isBaixa ? '−' : '+';
+    var qtdAbs = Math.abs(parseFloat(l.quantidade||0));
+    var podeEstornar = isBaixa && l.codigo;
+    return '<div style="background:var(--sur);border:1px solid var(--bor);border-radius:var(--rs);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)">'+
+      '<div style="display:flex;align-items:center;gap:12px">'+
+        '<div style="width:40px;height:40px;border-radius:10px;background:'+bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+          '<span style="font-size:18px;font-weight:900;color:'+cor+'">'+sinal+'</span>'+
+        '</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+( l.descricao||'—')+'</div>'+
+          '<div style="font-size:11px;color:var(--tx3);margin-top:2px;font-weight:600">'+
+            (l.codigo?'Cód: '+l.codigo+' · ':'')+'Lote: '+(l.lote||'S/N')+' · Val: '+(l.validade||'—')+
+          '</div>'+
+          '<div style="font-size:10px;color:var(--tx3);margin-top:2px;font-weight:600">'+
+            (l.data||'')+(l.observacao?' · '+l.observacao:'')+
+          '</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0">'+
+          '<div style="font-size:22px;font-weight:900;color:'+cor+'">'+sinal+qtdAbs+'</div>'+
+          (podeEstornar ?
+            '<button onclick="pedirEstorno('+idx+')" class="btn btn-org btn-xs" style="margin-top:6px">'+
+              'Estornar'+
+            '</button>' : '')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function pedirEstorno(idx) {
+  var l = logFiltrado[idx];
+  estornoAtual = l;
+  document.getElementById('est-prod').textContent = l.descricao || '—';
+  document.getElementById('est-lote').textContent = l.lote || 'S/N';
+  document.getElementById('est-qtd').textContent = '+' + Math.abs(parseFloat(l.quantidade||0)) + ' unid. (devolver ao estoque)';
+  document.getElementById('est-data').textContent = l.data || '—';
+  document.getElementById('ov-estorno').classList.add('open');
+}
+
+async function confirmarEstorno() {
+  if (!estornoAtual) return;
+  var btn = document.getElementById('btn-conf-estorno');
+  btn.disabled = true; btn.textContent = 'Estornando...';
+  try {
+    var res = await apiPost({
+      action: 'estorno',
+      codigo: estornoAtual.codigo,
+      lote: estornoAtual.lote,
+      quantidade: Math.abs(parseFloat(estornoAtual.quantidade||0)),
+      motivo: 'Estorno de baixa em ' + (estornoAtual.data||'')
+    });
+    if (res.status === 'ok') {
+      fecharOv('ov-estorno');
+      toast('Estorno realizado! Quantidade devolvida ao estoque.', 'success');
+      carregarHistorico();
+      renderTudo();
+    } else {
+      toast('Erro: ' + (res.message||''), 'error');
+    }
+  } catch(e) { toast('Erro de conexão.', 'error'); }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Confirmar Estorno';
+}
+
+// ══ ITENS ZERADOS ════════════════════════════════════════
+
+function renderZerados() {
+  if (!dados.length) return;
+
+  var busca = (document.getElementById('z-busca').value||'').toLowerCase();
+  var fornFil = document.getElementById('z-forn-fil').value;
+
+  // Preenche filtro de fornecedor se vazio
+  var sel = document.getElementById('z-forn-fil');
+  if (sel.options.length === 1) {
+    fornLista().forEach(function(f){
+      var o = document.createElement('option');
+      o.value = f; o.textContent = f;
+      sel.appendChild(o);
+    });
+  }
+
+  // Filtra zerados
+  var zerados = dados.filter(function(r) {
+    var tot = totalQtd(r);
+    var matchForn = !fornFil || r.__forn === fornFil;
+    var matchBusca = !busca || r.__desc.toLowerCase().includes(busca) || r.__cod.toLowerCase().includes(busca);
+    return tot === 0 && matchForn && matchBusca;
+  });
+
+  // Cards
+  var fornsZ = {};
+  zerados.forEach(function(r){ fornsZ[r.__forn] = 1; });
+  document.getElementById('z-total').textContent = zerados.length;
+  document.getElementById('z-forn').textContent = Object.keys(fornsZ).length;
+  var pct = dados.length > 0 ? ((zerados.length / dados.length) * 100).toFixed(1) : 0;
+  document.getElementById('z-pct').textContent = pct + '%';
+
+  // Tabela
+  document.getElementById('z-tbody').innerHTML = zerados.length ? zerados.map(function(r) {
+    return '<tr>' +
+      '<td style="font-family:var(--mono);font-size:11px;white-space:nowrap">' + r.__cod + '</td>' +
+      '<td>' + r.__desc + '</td>' +
+      '<td><span class="badge be">' + r.__forn + '</span></td>' +
+      '<td>' + r.__und + '</td>' +
+      '<td><input type="number" min="0" placeholder="Qtd" class="qtd-input" data-cod="' + r.__cod + '" data-desc="' + r.__desc.replace(/"/g,'') + '" data-forn="' + r.__forn + '" data-und="' + r.__und + '">' +
+      '</td>' +
+    '</tr>';
+  }).join('') : '<tr><td colspan="5"><div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><p>Nenhum item zerado! ✓</p><small>Estoque completo</small></div></td></tr>';
+}
+
+function exportZerados() {
+  if (!dados.length) { toast('Conecte a planilha primeiro!', 'error'); return; }
+
+  var busca = (document.getElementById('z-busca').value||'').toLowerCase();
+  var fornFil = document.getElementById('z-forn-fil').value;
+
+  var zerados = dados.filter(function(r) {
+    var tot = totalQtd(r);
+    var matchForn = !fornFil || r.__forn === fornFil;
+    var matchBusca = !busca || r.__desc.toLowerCase().includes(busca) || r.__cod.toLowerCase().includes(busca);
+    return tot === 0 && matchForn && matchBusca;
+  });
+
+  if (!zerados.length) { toast('Nenhum item zerado!', 'info'); return; }
+
+  // Pega qtd desejada dos inputs
+  var inputs = document.querySelectorAll('#z-tbody input[data-cod]');
+  var qtdMap = {};
+  inputs.forEach(function(inp) {
+    if (inp.value) qtdMap[inp.getAttribute('data-cod')] = inp.value;
+  });
+
+  var rows = [['Código','Descrição','Fornecedor','Unidade','Qtd Desejada'].join(';')];
+  zerados.forEach(function(r) {
+    var qtd = qtdMap[r.__cod] || '';
+    rows.push([r.__cod, r.__desc, r.__forn, r.__und, qtd]
+      .map(function(v){ return '"' + String(v||'').replace(/"/g,'""') + '"'; })
+      .join(';'));
+  });
+
+  baixarCSV(rows.join('\n'), 'itens_zerados_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.csv');
+  toast('Exportado: ' + zerados.length + ' itens zerados!', 'success');
+}
+
+// ══ TOAST ════════════════════════════════════════════════
+function toast(msg,tipo){
+  var icons={
+    success:'<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+    error:  '<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    info:   '<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="var(--blu)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+  };
+  var t=document.createElement('div');t.className='toast '+(tipo||'info');
+  t.innerHTML=(icons[tipo]||icons.info)+'<span>'+msg+'</span>';
+  document.getElementById('tc').appendChild(t);
+  setTimeout(function(){t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(function(){t.remove();},300);},4000);
+}
+</script>
+</body>
+</html>
